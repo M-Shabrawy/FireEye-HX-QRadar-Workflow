@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Workflow name="FireEyeHX" version="1.0" xmlns="http://qradar.ibm.com/UniversalCloudRESTAPI/Workflow/V1">
-
 	<Parameters>
-		<Parameter name="host" label="Host" required="true"/>
-		<Parameter name="port" label="Port" value="443" required="true"/>
-		<Parameter name="username" label="Username" required="true"/>
-		<Parameter name="password" label="Password" required="true" secret="true"/>
+		<Parameter name="host" label="Host" required="true" />
+		<Parameter name="hx_port" label="Port" value="443" required="true" />
+		<Parameter name="username" label="Username" required="true" />
+		<Parameter name="password" label="Password" required="true" secret="true" />
 	</Parameters>
-
 	<Actions>
 		<!-- Initialize the Bookmark -->
 		<Initialize path="/bookmark" value="${time()}" />
@@ -19,8 +17,8 @@
 		-->
 
 		<!-- Authenticate and request API Token -->
-        <CallEndpoint url="https://${/host}:${/port}/hx/api/v3/token" method="get" savePath="/get_feapi_token" >
-            <SSLConfiguration allowUntrustedServerCertificate="true"/>
+        <CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/token" method="get" savePath="/get_feapi_token" >
+            <SSLConfiguration allowUntrustedServerCertificate="true" />
             <BasicAuthentication username="${/username}" password="${/password}" />
             <RequestHeader name="Accept" value="application/json" />
         </CallEndpoint>
@@ -35,19 +33,19 @@
         <Set path="/x_feapi_token" value="${/get_feapi_token/headers/X-FeApi-Token}" />
 
 		<!-- Get Alerts -->
-		<CallEndpoint url="https://${/host}:${port}//hx//api//v3//alert_groups/?" method="GET" savePath="/get_alerts">
+		<CallEndpoint url="https://${/host}:${/hx_port}//hx//api//v3//alert_groups/?" method="GET" savePath="/get_alerts">
 			<RequestHeader name="X-FEAPI-TOKEN:" value="${/x_feapi_token}" />
 			<RequestHeader name="Accept" value="application/json" />
-			<QueryParameter name="offset" value="0"/>
-			<QueryParameter name="limit" value="100"/>
-			<QueryParameter name="sort" value="last_event_at">
+			<QueryParameter name="offset" value="0" />
+			<QueryParameter name="limit" value="100" />
+			<QueryParameter name="sort" value="last_event_at" />
 			<!-- URL Encoded Filter for last_event_at greater than Start Time -->
 			<QueryParameter name="filterQuery" value="%7B%22operator%22%3A%22gt%22%2C%22arg%22%3A%20%5B%22${/start_time}%22%5D%2C%22field%22%3A%22last%5Fevent%5Fat%22%7D" />-->			
 		</CallEndpoint>
 		
 		<!-- Handle Errors -->
 		<If condition="/get_alerts/status_code != 200">
-			<Abort reason="${/get_alerts/status_message}"/>
+			<Abort reason="${/get_alerts/status_message}" />
 		</If>
 		
 		<!-- Alert are returned in JSON format-->
@@ -56,11 +54,11 @@
 		 <Log type="INFO" message="FE HX API: Got ${/event_batch/body/data/total} events" />
 
 		<!-- Post Alerts -->
-        <PostEvents path="/alerts" source="${/host}"/>
+        <PostEvents path="/alerts" source="${/host}" />
 
 		<!-- Dispose generated token to clear active session -->
-		<CallEndpoint url="https://${/host}:${port}/hx/api/v3/token" method="delete" savePath="/del_feapi_token" >
-        	<SSLConfiguration allowUntrustedServerCertificate="true"/>
+		<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/token" method="delete" savePath="/del_feapi_token" >
+        	<SSLConfiguration allowUntrustedServerCertificate="true" />
             <RequestHeader name="X-FEAPI-TOKEN:" value="${/x_feapi_token}" />
             <RequestHeader name="Accept" value="application/json" />
         </CallEndpoint>
@@ -71,11 +69,9 @@
             <Abort reason="${/get_feapi_token/body/message}" />
         </If>
 	</Actions>
-
 	<Tests>
-		<DNSResolutionTest host="${/host}"/>
-		<TCPConnectionTest host="${/host}:${/port}"/>
-		<HTTPConnectionThroughProxyTest url="https://${/host}:${/port}"/>
+		<DNSResolutionTest host="${/host}" />
+		<TCPConnectionTest host="${/host}:${/hx_port}" />
+		<HTTPConnectionThroughProxyTest url="https://${/host}:${/hx_port}" />
 	</Tests>
-
 </Workflow>
