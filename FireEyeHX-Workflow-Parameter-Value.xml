@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <WorkflowParameterValues xmlns="http://qradar.ibm.com/UniversalCloudRESTAPI/WorkflowParameterValues/V1">
-    <Value name="host" value="https://hexXXXXXX-hx-webui-1.hex03.helix.apps.fireeye.com" />
+    <Value name="host" value="hexXXXXXX-hx-webui-1.hex03.helix.apps.fireeye.com" />
     <Value name="hx_port" value="443" />
     <Value name="username" value="api_analys" />
     <Value name="password" value="api_analys123" />
