@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<Workflow name="FireEyeHX" version="1.0" xmlns="http://qradar.ibm.com/UniversalCloudRESTAPI/Workflow/V1">
+<Workflow name="FireEye HX" version="1.0" xmlns="http://qradar.ibm.com/UniversalCloudRESTAPI/Workflow/V1">
 	<Parameters>
 		<Parameter name="host" label="Host" required="true" />
 		<Parameter name="hx_port" label="Port" value="443" required="true" />
@@ -13,7 +13,7 @@
 		<!-- Use bookmark -10 mins as start time -->
 		<FormatDate pattern="yyyy-MM-dd'T'HH:mm:ss'Z'" timeZone="UTC" time="${/bookmark - 600000}" savePath="/start_time" />
 		<!--
-		<FormatDate pattern="yyyy-MM-dd'T'HH:mm:ss" timeZone="UTC" time="${/bookmark}" savePath="/EndTime" />
+		<FormatDate pattern="yyyy-MM-dd'T'HH:mm:ss'Z'" timeZone="UTC" time="${/bookmark}" savePath="/end_time" />
 		-->
 
 		<!-- Authenticate and request API Token -->
