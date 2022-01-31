@@ -17,7 +17,7 @@
 		-->
 
 		<!-- Authenticate and request API Token -->
-        <CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/token" method="get" savePath="/get_feapi_token" >
+        <CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/token" method="GET" savePath="/get_feapi_token" >
             <SSLConfiguration allowUntrustedServerCertificate="true" />
             <BasicAuthentication username="${/username}" password="${/password}" />
             <RequestHeader name="Accept" value="application/json" />
@@ -33,14 +33,14 @@
         <Set path="/x_feapi_token" value="${/get_feapi_token/headers/X-FeApi-Token}" />
 
 		<!-- Get Alerts -->
-		<CallEndpoint url="https://${/host}:${/hx_port}//hx//api//v3//alert_groups/?" method="GET" savePath="/get_alerts">
-			<RequestHeader name="X-FEAPI-TOKEN:" value="${/x_feapi_token}" />
-			<RequestHeader name="Accept" value="application/json" />
+		<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/alert_groups/?" method="GET" savePath="/get_alerts">
 			<QueryParameter name="offset" value="0" />
 			<QueryParameter name="limit" value="100" />
 			<QueryParameter name="sort" value="last_event_at" />
 			<!-- URL Encoded Filter for last_event_at greater than Start Time -->
-			<QueryParameter name="filterQuery" value="%7B%22operator%22%3A%22gt%22%2C%22arg%22%3A%20%5B%22${/start_time}%22%5D%2C%22field%22%3A%22last%5Fevent%5Fat%22%7D" />-->			
+			<QueryParameter name="filterQuery" value="%7B%22operator%22%3A%22gt%22%2C%22arg%22%3A%20%5B%22${/start_time}%22%5D%2C%22field%22%3A%22last%5Fevent%5Fat%22%7D" />
+			<RequestHeader name="X-FEAPI-TOKEN:" value="${/x_feapi_token}" />
+			<RequestHeader name="Accept" value="application/json" />
 		</CallEndpoint>
 		
 		<!-- Handle Errors -->
@@ -57,7 +57,7 @@
         <PostEvents path="/alerts" source="${/host}" />
 
 		<!-- Dispose generated token to clear active session -->
-		<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/token" method="delete" savePath="/del_feapi_token" >
+		<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/token" method="DELETE" savePath="/del_feapi_token" >
         	<SSLConfiguration allowUntrustedServerCertificate="true" />
             <RequestHeader name="X-FEAPI-TOKEN:" value="${/x_feapi_token}" />
             <RequestHeader name="Accept" value="application/json" />
