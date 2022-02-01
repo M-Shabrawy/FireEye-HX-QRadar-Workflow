@@ -1,2 +1,2 @@
 # FireEye-HX-QRadar-Workflow
-IBM QRadar Cloud API Workflow for FireEye HX
+IIBM QRadar Universal Cloud Connector Workflow for FireEye HX
