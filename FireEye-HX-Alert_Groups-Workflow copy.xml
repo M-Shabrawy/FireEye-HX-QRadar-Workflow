@@ -75,7 +75,8 @@
 	</Actions>
 	<Tests>
 		<DNSResolutionTest host="${/host}" />
-		<TCPConnectionTest host="${/host}:${/hx_port}" />
+		<TCPConnectionTest host="${/host}" port="${/hx_port}" />
+		<SSLHandshakeTest host="${/host}" port="${/hx_port}"/>
 		<HTTPConnectionThroughProxyTest url="https://${/host}:${/hx_port}" />
 	</Tests>
 </Workflow>
