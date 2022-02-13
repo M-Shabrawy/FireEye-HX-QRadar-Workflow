@@ -7,69 +7,70 @@
 		<Parameter name="password" label="Password" required="true" secret="true" />
 		<Parameter name="limit" label="Limit" required="true" />
 	</Parameters>
+	
 	<Actions>
 		<!-- Initialize the Bookmark -->
 		<Initialize path="/bookmark" value="${time() - 60000 * 60 * 24 * 30}" />
 
 		<!-- Use bookmark -10 mins as start time -->
-		<FormatDate pattern="yyyy-MM-dd'T'HH:mm:ss'Z'" timeZone="UTC" time="${/bookmark}" savePath="/start_time" />
+		<FormatDate pattern="yyyy-MM-dd'T'HH:mm:ss'Z'" timeZone="UTC" time="${/bookmark}" savePath="/startTime" />
 
-		<!-- Authenticate and request API Token -->
-        <CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/token" method="GET" savePath="/get_feapi_token" >
-            <SSLConfiguration allowUntrustedServerCertificate="true" />
-            <BasicAuthentication username="${/username}" password="${/password}" />
-            <RequestHeader name="Accept" value="application/json" />
-        </CallEndpoint>
+			<!-- Authenticate and request API Token -->
+		<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/token" method="GET" savePath="/getFeApiToken" >
+			<SSLConfiguration allowUntrustedServerCertificate="true" />
+			<BasicAuthentication username="${/username}" password="${/password}" />
+			<RequestHeader name="Accept" value="application/json" />
+		</CallEndpoint>
 
-        <!-- Handle Errors -->
-        <If condition="/get_feapi_token/status_code != 204">
-			<Log type="Error" message="FE HX API: Error Authenticating to API: ${/get_feapi_token/body}" />
-            <Abort reason="Error login: ${/get_feapi_token/body}" />
-        </If>
+		<!-- Handle Errors -->
+		<If condition="/get_feapi_token/status_code != 204">
+			<Log type="Error" message="FE HX API: Error Authenticating to API: ${/getFeApiToken/body}" />
+			<Abort reason="Error login: ${/get_feapi_token/body}" />
+		</If>
 		<Else>
 			<!-- Extract the API Token -->
 			<Set path="/x_feapi_token" value="${/get_feapi_token/headers/X-FeApi-Token}" />
 			<!-- Build filterQuery -->
-			<Set path="/filterQuery" value='{"operator":"gt","arg": ["${/start_time}"],"field":"reported_at"}' />
-
+			<Set path="/filterQuery" value='{"operator":"gt","arg": ["${/startTime}"],"field":"reported_at"}' />
 			<!-- Get Alerts -->
 			<Set path="/offset" value="0" />
 
-			<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/alerts/?" method="GET" savePath="/get_alerts">
+			<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/alerts/?" method="GET" savePath="/getAlerts">
 				<QueryParameter name="offset" value="${/offset}" />
 				<QueryParameter name="limit" value="${/limit}" />
 				<QueryParameter name="sort" value="_id" />
-				<!-- URL Encoded Filter for last_event_at greater than Start Time -->
 				<QueryParameter name="filterQuery" value="${/filterQuery}" />
 				<RequestHeader name="X-FeApi-Token" value="${/x_feapi_token}" />
 				<RequestHeader name="Accept" value="application/json" />
 			</CallEndpoint>
-			
+
 			<!-- Handle Errors -->
-			<If condition="/get_alerts/status_code != 200">
-				<Log type="Error" message="FE HX API: Error fetching alerts ${/get_alerts/body}" />
+			<If condition="/getAlerts/status_code != 200">
+				<Log type="Error" message="FE HX API: Error fetching alerts ${/getAlerts/body}" />
 			</If>
 			<Else>
-				<Log type="INFO" message="FE HX API: Got ${/get_alerts/body/data/total} events" />
-
+				<Log type="INFO" message="FE HX API: Got ${/getAlerts/body/data/total} events" />
 				<!-- Alert are returned in JSON format-->
 				<!-- Extract Alerts-->
-				<If condition="${/get_alerts/body/data/total} > 0">
-					 <DoWhile condition="count(/get_alerts/body/data/entries) > 0">
-						<Set path="/alerts" value="${/get_alerts/body/data/entries}" />
+				<If condition="${/getAlerts/body/data/total} > 0">
+					<DoWhile condition="count(/getAlerts/body/data/entries) > 0">
+						<Set path="/alerts" value="${/getAlerts/body/data/entries}" />
 						<!-- Enrich Alerts -->
 						<ForEach item="/alert" items="/alerts">
-							<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/hosts/${/alert/agent/_id}" method="GET" savePath="/agent">
+							<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/hosts/${/alert/agent/_id}" method="GET" savePath="/getAagent">
 								<RequestHeader name="X-FeApi-Token" value="${/x_feapi_token}" />
 								<RequestHeader name="Accept" value="application/json" />
 							</CallEndpoint>
+							<If condition="/getAagent/status_code != 200">
+								<Log type="Error" message="FE HX API: Error fetching Agnet information: ${/getAagent/body}" />
+								<Abort reason="Error login: ${/getAagent/body}" />
+							</If>
+							<Log type="Info" message="FE HX API: Host found for ID: ${/alert/agent/_id}" />
 							<!-- Add host information to alert-->
 							<Set path="/alert/agent/hostname" value="${/agent/body/data/hostname}"  />
 							<Set path="/alert/agent/domain" value="${/agent/body/data/domain}"  />
 							<Set path="/alert/agent/primary_ip_address" value="${/agent/body/data/primary_ip_address}"  />
 							<Set path="/alert/agent/last_poll_ip" value="${/agent/body/data/last_poll_ip}"  />
-
-							<!-- Post Alert -->
 							<PostEvent path="/alert" source="${/host}" />
 						</ForEach>
 						<!-- Update bookmark -->
@@ -77,7 +78,7 @@
 						<!-- Next Page -->
 						<Set path="/Offset" value="${/offset + /limit - 1}" />
 						<!-- Get next page of alerts -->
-						<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/alerts/?" method="GET" savePath="/get_alerts">
+						<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/alerts/?" method="GET" savePath="/getAlerts">
 							<QueryParameter name="offset" value="${/offset}" />
 							<QueryParameter name="limit" value="${/limit}" />
 							<QueryParameter name="sort" value="_id" />
@@ -85,25 +86,29 @@
 							<RequestHeader name="X-FeApi-Token" value="${/x_feapi_token}" />
 							<RequestHeader name="Accept" value="application/json" />
 						</CallEndpoint>
-
+						<If condition="/getAlerts/status_code != 200">
+							<Log type="Error" message="FE HX API: Error fetching alerts ${/getAlerts/body}" />
+						</If>	
 					</DoWhile>
 				</If>
+				<Else>
+					<Log type="Notice" message="FE HX API: No Alerts to Pull." />
+				</Else>
 			</Else>
-
 			<!-- Dispose generated token to clear active session -->
-			<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/token" method="DELETE" savePath="/del_feapi_token" >
+			<CallEndpoint url="https://${/host}:${/hx_port}/hx/api/v3/token" method="DELETE" savePath="/delFeApiToken" >
 				<SSLConfiguration allowUntrustedServerCertificate="true" />
 				<RequestHeader name="X-FeApi-Token" value="${/x_feapi_token}" />
 				<RequestHeader name="Accept" value="application/json" />
 			</CallEndpoint>
-
 			<!-- Handle Errors -->
-			<If condition="/del_feapi_token/status_code != 204">
-				<Log type="Error" message="FE HX API: Error Deleteing Session: ${/del_feapi_token/body/message}" />
+			<If condition="/delFeApiToken/status_code != 204">
+				<Log type="Error" message="FE HX API: Error Deleteing Session: ${/delFeApiToken/body/message}" />
 				<Abort reason="${/get_feapi_token/body/message}" />
 			</If>
 		</Else>
 	</Actions>
+	
 	<Tests>
 		<DNSResolutionTest host="${/host}" />
 		<TCPConnectionTest host="${/host}" port="${/hx_port}" />
